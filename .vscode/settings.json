@@ -1,0 +1,44 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "GitCommitPlugin.MaxSubjectWords": 40,
+  "GitCommitPlugin.CustomCommitType": [
+    {
+      "label": "🎉 init",
+      "detail": "初次提交/初始化项目"
+    },
+    {
+      "label": "🙈 git",
+      "detail": "添加或修改 .gitignore 文件"
+    },
+    {
+      "label": "📦 release",
+      "detail": "发布版本/添加标签"
+    },
+    {
+      "label": "🚑 patch",
+      "detail": "添加重要补丁"
+    }
+  ],
+  "stylelint.validate": ["css", "less"]
+}
