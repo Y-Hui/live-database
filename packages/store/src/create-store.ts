@@ -41,6 +41,10 @@ export interface Store<S> {
    * 清空所有监听器
    */
   readonly clearAllListener: RemoveListenerFn
+  /**
+   * 手动触发所有 listener
+   */
+  readonly notify: () => void
 }
 
 export type GetState<T> = T extends Store<infer U> ? U : T
@@ -62,6 +66,7 @@ function setStateAction<S>(action: SetStateAction<S>, prevState: S): S {
 function createStore<S>(initialState: S): StoreMethods<S> {
   const state = {
     entity: initialState,
+    prevEntity: initialState,
     get value() {
       return this.entity
     },
@@ -75,17 +80,26 @@ function createStore<S>(initialState: S): StoreMethods<S> {
 
   const getState = () => state.value
 
+  /**
+   * 通知所有 listener
+   */
+  const notify = () => {
+    const dispatch = (listener: Listener<S>) =>
+      listener(getState(), state.prevEntity)
+    // 优先调用命名的监听器
+    namedListeners.forEach(dispatch)
+    listeners.forEach(dispatch)
+  }
+
   const setState: SetStateFn<S> = (action, equalityFn = Object.is) => {
-    const prevState = getState()
+    state.prevEntity = getState()
+    const prevState = state.prevEntity
     const nextState = setStateAction(action, prevState)
     if (equalityFn(prevState, nextState)) {
       return
     }
     state.value = nextState
-    const dispatch = (listener: Listener<S>) => listener(nextState, prevState)
-    // 优先调用命名的监听器
-    namedListeners.forEach(dispatch)
-    listeners.forEach(dispatch)
+    notify()
   }
 
   const addListener = (listener: Listener<S>, key?: ListenerKey) => {
@@ -116,6 +130,7 @@ function createStore<S>(initialState: S): StoreMethods<S> {
     addListener,
     removeListener,
     clearAllListener,
+    notify,
   } as const)
 
   const extend = <T>(middleware: (store: Store<S>) => T) => {
@@ -129,6 +144,7 @@ function createStore<S>(initialState: S): StoreMethods<S> {
     removeListener,
     clearAllListener,
     extend,
+    notify,
   } as const
 }
 

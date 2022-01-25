@@ -166,6 +166,10 @@ function addListener: (listener: Listener<S>, key?: ListenerKey ) => RemoveListe
 
 销毁所有的侦听器。
 
+#### `notify`
+
+手动触发所有 listener。
+
 #### `extends`
 
 该函数是用于扩展原始 api 所存在的。
