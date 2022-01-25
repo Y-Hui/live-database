@@ -20,16 +20,6 @@ store.setState((prevState) => ({ ...prevState, age: prevState.age + 1 }))
 store.setState((prevState) => ({ ...prevState, name: 'Helen' }))
 ```
 
-### getState
-
-```ts
-import create from '@live-database/store'
-
-const store = create({ name: 'Andrew', age: 14 })
-
-// 使用 getState 获取最新的状态值
-store.getState().name
-```
 
 ### 指定 state 的 listener
 
@@ -99,40 +89,105 @@ store.clearAllListener() // 清空所有 listener
 ```
 
 
-### 关于 `extend`
 
-store 的返回结果中的 `extend` 函数可创建一个代理对象，用于增强 store 的 api。
+### API 签名及解释
+
+####  `getState`
+ 获取当前最新的状态值。
+
+#### `setState`
+
+函数签名如下：
+
+  ```ts
+   type SetStateAction<S> = S | ((prevState: S) => S)
+   type EqualityFn = (value1: unknown, value2: unknown) => boolean
+   
+   type SetStateFn<S> = (action: SetStateAction<S>, equalityFn?: EqualityFn) => void
+  ```
+
+  `setState` 接收两个参数：
+
+  1. 参数 1
+
+     可以为新的值或者函数调用。
+
+     ```ts
+     const store = create(false)
+     
+     store.setState(true) // 新值
+     // 或者
+     store.setState((currentState) => !currentState) // 函数调用
+     ```
+
+  2. 参数 2
+
+     参数 2 接收一个函数，用于比较新值与旧值是否相等，若两值相等，则跳过触发 `listener`。
+
+     默认使用 `Object.is` 进行比较。
+
+#### `addListener`
+
+添加一个侦听器，当数据变化时则会触发。
+
+函数签名：
+
+```ts
+type RemoveListenerFn = () => void
+type ListenerKey = string | symbol
+type Listener<T> = (state: T, prevState: T) => void
+
+function addListener: (listener: Listener<S>, key?: ListenerKey ) => RemoveListenerFn
+```
+
+它接收两个参数：
+
+1. 参数 1 `listener`
+
+   侦听器函数，数据变化后调用该函数。
+
+2. 参数 2 `key`
+
+   该参数为可选参数，用于标记并保持唯一。确保侦听器不会重复添加。
+
+   并且，拥有 key 值的侦听器总是在匿名侦听器前调用。
+
+函数返回值：
+
+`addListener` 返回一个函数，可用于销毁此侦听器。
+
+
+
+#### `removeListener`
+
+根据传入的 key 销毁侦听器。
+
+#### `clearAllListener`
+
+销毁所有的侦听器。
+
+#### `extends`
+
+该函数是用于扩展原始 api 所存在的。
+
+它接收一个函数，并将函数的返回值返回，作为新的 api 使用。
+
+这是一个例子：
 
 ```ts
 import create from '@live-database/store'
 
-// 方式 1
-const basicStore = create({ value: 2 }) // 依旧持有原始对象
-const store = basicStore.extend((api) => {
+const store = create(2).extend((api) => {
   return {
-    ...api,
-    getDoubleValue() {
-      return api.getState().value * 2
+    ...api, // 将原始 api 合并
+    getDoubleValue() { // 新增一个获取 2 倍数值的函数
+      return api.getState() * 2
     },
   }
 })
 
-console.log(store.getState().value) // 2
-console.log(store.getDoubleValue()) // 4
-
-
-// 方式 2
-const store = create({ value: 2 }).extend((api) => {
-  return {
-    ...api,
-    getDoubleValue() {
-      return api.getState().value * 2
-    },
-  }
-})
-
-console.log(store.getState().value) // 2
+console.log(store.getState()) // 2
 console.log(store.getDoubleValue()) // 4
 ```
 
-extend 的返回值是没有任何约束的，你可以随心所欲做任何功能而不会影响 store api。
+`extend` 的返回值是没有任何约束的，你可以随心所欲创造任何功能。

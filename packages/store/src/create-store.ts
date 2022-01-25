@@ -1,7 +1,15 @@
-export type Listener<T> = (state: T, prevState: T) => void
-type SetStateAction<S> = S | ((prevState: S) => S)
-type RemoveListenerFn = () => void
-export type ListenerKey = string | symbol
+import {
+  EqualityFn,
+  Listener,
+  ListenerKey,
+  RemoveListenerFn,
+  SetStateAction,
+} from './types/index'
+
+type SetStateFn<S> = (
+  action: SetStateAction<S>,
+  equalityFn?: EqualityFn,
+) => void
 
 export interface Store<S> {
   /**
@@ -10,8 +18,12 @@ export interface Store<S> {
   readonly getState: () => S
   /**
    * 修改 State
+   *
+   * 若新旧值相等，则跳过触发 listener
+   *
+   * @param equalityFn 比较新值旧值是否相等的函数，默认使用 `Object.is` 比较。
    */
-  readonly setState: (action: SetStateAction<S>) => void
+  readonly setState: SetStateFn<S>
   /**
    * 添加监听器
    *
@@ -40,7 +52,14 @@ interface StoreMethods<S> extends Store<S> {
   readonly extend: <T>(middleware: (store: Store<S>) => T) => T
 }
 
-function createStore<S extends object>(initialState: S): StoreMethods<S> {
+function setStateAction<S>(action: SetStateAction<S>, prevState: S): S {
+  if (typeof action === 'function') {
+    return (action as (prevState: S) => S)(prevState)
+  }
+  return action
+}
+
+function createStore<S>(initialState: S): StoreMethods<S> {
   const state = {
     entity: initialState,
     get value() {
@@ -56,14 +75,14 @@ function createStore<S extends object>(initialState: S): StoreMethods<S> {
 
   const getState = () => state.value
 
-  const setState = (action: SetStateAction<S>) => {
+  const setState: SetStateFn<S> = (action, equalityFn = Object.is) => {
     const prevState = getState()
-    if (typeof action === 'function') {
-      state.value = action(prevState)
-    } else {
-      state.value = action
+    const nextState = setStateAction(action, prevState)
+    if (equalityFn(prevState, nextState)) {
+      return
     }
-    const dispatch = (listener: Listener<S>) => listener(getState(), prevState)
+    state.value = nextState
+    const dispatch = (listener: Listener<S>) => listener(nextState, prevState)
     // 优先调用命名的监听器
     namedListeners.forEach(dispatch)
     listeners.forEach(dispatch)
@@ -97,7 +116,7 @@ function createStore<S extends object>(initialState: S): StoreMethods<S> {
     addListener,
     removeListener,
     clearAllListener,
-  })
+  } as const)
 
   const extend = <T>(middleware: (store: Store<S>) => T) => {
     return middleware(stateMethods)
@@ -110,7 +129,7 @@ function createStore<S extends object>(initialState: S): StoreMethods<S> {
     removeListener,
     clearAllListener,
     extend,
-  }
+  } as const
 }
 
 export default createStore
