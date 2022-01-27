@@ -1,0 +1,8 @@
+{
+  "name": "@live-database/core",
+  "version": "0.0.0",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@live-database/store": "workspace:^0.0.0"
+  }
+}
